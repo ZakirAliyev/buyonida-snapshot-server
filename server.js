@@ -1,5 +1,5 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
+const chromium = require('chrome-aws-lambda');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,11 +8,13 @@ app.get('/render', async (req, res) => {
     const url = req.query.url;
     if (!url) return res.status(400).send('Missing ?url=');
 
-    let browser;
+    let browser = null;
+
     try {
-        browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        browser = await chromium.puppeteer.launch({
+            args: chromium.args,
+            executablePath: await chromium.executablePath,
+            headless: chromium.headless,
         });
 
         const page = await browser.newPage();
@@ -22,7 +24,7 @@ app.get('/render', async (req, res) => {
         res.set('Content-Type', 'text/html');
         res.send(html);
     } catch (err) {
-        console.error('Snapshot error:', err);
+        console.error('Snapshot error:', err.message);
         res.status(500).send('Snapshot rendering failed');
     } finally {
         if (browser) await browser.close();
@@ -30,5 +32,5 @@ app.get('/render', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Snapshot server running on port ${PORT}`);
+    console.log(`✅ Snapshot server running at http://localhost:${PORT}`);
 });
