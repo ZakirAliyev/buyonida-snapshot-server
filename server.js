@@ -11,9 +11,11 @@ app.get("/render", async (req, res) => {
     let browser;
 
     try {
+        const executablePath = await chromium.executablePath || null;
+
         browser = await chromium.puppeteer.launch({
             args: chromium.args,
-            executablePath: await chromium.executablePath,
+            executablePath: executablePath,
             headless: chromium.headless,
         });
 
@@ -24,7 +26,7 @@ app.get("/render", async (req, res) => {
         res.set("Content-Type", "text/html");
         res.send(html);
     } catch (err) {
-        console.error("Snapshot error:", err.message);
+        console.error("Snapshot error:", err);
         res.status(500).send("Snapshot rendering failed");
     } finally {
         if (browser) await browser.close();
@@ -32,5 +34,5 @@ app.get("/render", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`✅ Snapshot server running on port ${PORT}`);
+    console.log(`✅ Snapshot server running at http://localhost:${PORT}`);
 });
