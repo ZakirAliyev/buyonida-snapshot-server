@@ -6,7 +6,12 @@ const PORT = process.env.PORT || 3000;
 
 app.get("/render", async (req, res) => {
     const url = req.query.url;
-    if (!url) return res.status(400).send("Missing ?url=");
+    if (!url) return res.status(400).send("Missing ?url= parameter");
+
+    // URL'nin geçerli olduğunu kontrol et
+    if (!url.match(/^https?:\/\//)) {
+        return res.status(400).send("Invalid URL. Must start with http:// or https://");
+    }
 
     let browser;
 
@@ -17,6 +22,7 @@ app.get("/render", async (req, res) => {
             args: chromium.args,
             executablePath: executablePath,
             headless: chromium.headless,
+            ignoreHTTPSErrors: true, // HTTPS hatalarını görmezden gel
         });
 
         const page = await browser.newPage();
@@ -27,9 +33,11 @@ app.get("/render", async (req, res) => {
         res.send(html);
     } catch (err) {
         console.error("Snapshot error:", err);
-        res.status(500).send("Snapshot rendering failed");
+        res.status(500).send(`Snapshot rendering failed: ${err.message}`);
     } finally {
-        if (browser) await browser.close();
+        if (browser) {
+            await browser.close();
+        }
     }
 });
 
